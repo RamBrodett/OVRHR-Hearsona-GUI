@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui;
+  --background: #171717;
+  --background-2: #272727;
+  --foreground: #D9D9D9;
+  --accent-color-1: #DFDFDF;
+  --accent-color-2: #797979;
+  --accent-color-3: #3C6AA9;
+  --accent-color-4: #4D80DE;
+  --accent-color-5: #DE4D4F;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+
+
