@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import {AudioLines} from 'lucide-react'
 
 const AudioPreviewComponent = ({ Audio }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -83,14 +84,16 @@ const AudioPreviewComponent = ({ Audio }) => {
   >
     <h1 className="text-base font-bold text-[var(--accent-color-1)]">Audio Preview</h1>
 
-    <div ref={containerRef} className="flex flex-col flex-grow relative gap-1">
-      <div 
+    <div ref={containerRef} className="flex flex-col flex-grow relative">
+      {Audio !== null ? (<div 
         ref={waveformRef} 
-        className="flex-grow-[0.5] min-h-[100px] z-10"
-      />
+        className="flex-grow-[0.5] min-h-[100px] max-h-[150px] z-10"
+      />) : null 
+      }
 
-      <div className="flex justify-center mt-2">
-        <button
+      <div className={`flex justify-center ${Audio ? 'mt-1': ''}`}>
+        {Audio !== null ? (
+          <button
           onClick={togglePlayback}
           disabled={isDisabled}
           className={`rounded-full p-3 transition-all duration-200
@@ -112,7 +115,7 @@ const AudioPreviewComponent = ({ Audio }) => {
               translate-x-[1px]"
             />
           )}
-        </button>
+        </button>): <AudioLines className='w-50 h-50 text-[var(--accent-color-8)]'/>}
       </div>
     </div>
   </div>
