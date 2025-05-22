@@ -8,14 +8,13 @@ function MainApplication() {
   const [chatHistory, setChatHistory] = useState([])
   const [audioCollection, setAudioCollection] = useState([])
   const [audio, setAudio] = useState(null)
-  const [loading, setLoading] = useState(false)
   const [soundIndex, setSoundIndex] = useState(0)
 
   const handleQuerySubmission = async () => {
     if (prompt === '') return
     try {
-      setLoading(true)
       setChatHistory(prev => [...prev, { role: 'user', content: prompt }])
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Generating' }])
       const response = await fetch('/api/query', {
         method: 'POST',
         headers: {
@@ -39,8 +38,10 @@ function MainApplication() {
         const url = URL.createObjectURL(blob)
         return { filename, url }
       })
-      setChatHistory(prev => [...prev, { role: 'ai', content: 'Sound now available for preview' }])
-      setLoading(false)
+      setChatHistory(prev => [
+        ...prev.slice(0, -1),
+        { role: 'ai', content: 'Sound now available for preview' }
+      ])
       setAudioCollection(processedAudios)
       setAudio(processedAudios[soundIndex]?.url || null)
     } catch (error) {
@@ -106,7 +107,6 @@ function MainApplication() {
               handleQuerySubmission={handleQuerySubmission}
               chatHistory={chatHistory}
               setChatHistory={setChatHistory}
-              loading={loading}
               handleAudioChange={handleAudioChange}
             />
           </div>
