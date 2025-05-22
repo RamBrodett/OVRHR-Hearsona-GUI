@@ -2,7 +2,6 @@ import React from 'react'
 import { AudioWaveform, AudioLines } from 'lucide-react'
 
 const PromptComponent = ({
-  loading,
   setPrompt,
   prompt,
   handleQuerySubmission,
