@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { AudioLines } from 'lucide-react'
-import PromptComponent from '../components/PromptComponent'
-import AudioPreviewComponent from '../components/AudioPreviewComponent'
+
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity } from 'lucide-react';
 
 function MainApplication() {
   const [prompt, setPrompt] = useState('')
@@ -88,35 +87,83 @@ function MainApplication() {
   }
 
   return (
-    <div className="flex flex-col bg-[var(--background)] p-7 gap-5 h-screen min-w-screen">
-      {/* Header */}
-      <div className="flex flex-row h-[5%] gap-5 items-center">
-        <AudioLines className="w-8 h-8 text-[var(--accent-color-3)]" />
-        <p className="text-2xl font-bold text-[var(--accent-color-3)]">OVR HEAR</p>
-      </div>
+    <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
 
-      {/* Main Content */}
-      <div className="flex flex-row h-[95%] gap-7 pb-10">
+      <div className="flex flex-row h-[100%] gap-10">
+        
         {/* Left Panel */}
-        <div className="flex flex-col h-full w-2/5 rounded-3xl gap-5">
-          {/* Prompt Area */}
-          <div className="flex flex-col bg-[var(--background-2)] h-[70%] w-full rounded-3xl p-5 gap-4 overflow-hidden">
-            <PromptComponent
-              prompt={prompt}
-              setPrompt={setPrompt}
-              handleQuerySubmission={handleQuerySubmission}
-              chatHistory={chatHistory}
-              setChatHistory={setChatHistory}
-              handleAudioChange={handleAudioChange}
+        <div className="flex flex-col h-full w-[50%] gap-5 bg-[]">
+          
+          <div className="flex h-[10%] items-center justify-between py-1 w-full">
+            {/* Logo */}
+            <img
+              src="/src/assets//logo.png"
+              alt="Hearsona"
+              className="h-12 w-auto"
             />
+            {/* Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Start Over */}
+              <button className="flex items-center gap-2.5 bg-[var(--background-2)] text-[var(--font-color)] px-3 py-2 rounded-2xl hover:bg-[#2a2a2a] transition">
+                <RotateCcw size={20} />
+                <span className="text-lg font-medium">Start Over</span>
+              </button>
+              {/* Tooltip */}
+              <button className="bg-[var(--background-2)] text-[var(--font-color)] p-3 rounded-2xl hover:bg-[#2a2a2a] transition">
+                <HelpCircle size={22} />
+              </button>
+            </div>
           </div>
 
-          {/* Audio Previewer */}
-          <AudioPreviewComponent Audio={audio} />
+          {/* Chat Area */}
+          <div className="flex flex-col justify-end text-center h-[70%] mb-5 w-full overflow-hidden">
+            <div className="mb-2">
+              <p className="text-[var(--font-color)] text-3xl">
+                What sound are you imagining today?
+              </p>
+            </div>
+          </div>
+
+          {/* Prompt Area */}
+          <div className="flex flex-col bg-[var(--background-2)] p-6 gap-5 h-[17.5%] w-full rounded-3xl overflow-hidden">
+          
+            <input
+              type="text"
+              placeholder="Not quite right? Say what to change—or use the controls."
+              className="w-full bg-transparent text-[var(--font-color)] placeholder-[var(--placeholder-color)] text-lg focus:outline-none"
+            />
+
+            {/* Controls */}
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2.5">
+                
+                {/* Pitch */}
+                <button className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-color)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition">
+                  <Activity size={20} /> Pitch
+                </button>
+
+                {/* Loudness */}
+                <button className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-color)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition">
+                  <Volume2 size={20} /> Loudness
+                </button>
+
+                {/* Duration */}
+                <button className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-color)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition">
+                  <Clock size={20} /> Duration
+                </button>
+              </div>
+
+              {/* Submit Arrow */}
+              <button className="bg-[var(--sound-button)] text-[var(--font-color)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition">
+                <ArrowUp size={25} />
+              </button>
+            </div>
+
+          </div>
         </div>
 
         {/* Right Panel Placeholder */}
-        <div className="flex-1 rounded-3xl bg-[var(--background-2)] p-5 ">
+        <div className="flex-1 rounded-3xl w-[50%] bg-[var(--background-2)]">
           {/* Right side content goes here */}
         </div>
       </div>

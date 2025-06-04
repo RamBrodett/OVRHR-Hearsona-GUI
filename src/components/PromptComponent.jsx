@@ -21,7 +21,7 @@ const PromptComponent = ({
       {chatHistory.length === 0 ? (
         <>
           <div className="text-center w-full font-semibold text-2xl text-[var(--foreground)] mb-2">
-            What do you want to hear?
+            What do you want to hear? Helo
           </div>
           <div className="flex flex-row items-center gap-2 w-full border rounded-full bg-[var(--accent-color-7)] p-3 border-[var(--accent-color-6)]">
             <textarea
