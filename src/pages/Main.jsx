@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useEffect, useRef } from 'react';
 
-import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity } from 'lucide-react';
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Music2 } from 'lucide-react';
 
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
@@ -8,6 +9,46 @@ function MainApplication() {
   const [pitch, setPitch] = useState(440);
   const [loudness, setLoudness] = useState(-20);
   const [duration, setDuration] = useState(10);
+
+  const [messages, setMessages] = useState([]);
+  const [userInput, setUserInput] = useState('');
+
+  const chatRef = useRef(null);
+
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleSendMessage = () => {
+    if (!userInput.trim()) return;
+
+    const newUserMessage = { role: 'user', text: userInput.trim() };
+    setMessages((prev) => [...prev, newUserMessage]);
+    setUserInput('');
+
+    setTimeout(() => {
+      const responseText = generateSystemResponse(userInput);
+      const systemMessage = { role: 'assistant', text: responseText };
+
+      setMessages((prev) => [...prev, systemMessage]);
+    }, 500);
+  };
+
+  const generateSystemResponse = (input) => {
+    if (input.toLowerCase().includes('pitch')) {
+      return "Raising the pitch a bit — let’s brighten it up.";
+    } else if (input.toLowerCase().includes('louder')) {
+      return "Turning up the volume — let's make it louder.";
+    } else if (input.toLowerCase().includes('longer')) {
+      return "Extending the duration — more time to enjoy the sound.";
+    } else {
+      return `Got it! Generating a "${input}" sound for you...`;
+    }
+  };
+
+  useEffect(() => {
+  if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
@@ -26,11 +67,16 @@ function MainApplication() {
             />
             {/* Buttons */}
             <div className="flex items-center gap-3">
+              
               {/* Start Over */}
-              <button className="flex items-center gap-2.5 bg-[var(--background-2)] text-[var(--font-white)] px-3 py-2 rounded-2xl hover:bg-[#2a2a2a] transition">
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="flex items-center gap-2.5 bg-[var(--background-2)] text-[var(--font-white)] px-3 py-2 rounded-2xl hover:bg-[#2a2a2a] transition"
+              >
                 <RotateCcw size={20} />
                 <span className="text-lg font-medium">Start Over</span>
               </button>
+
               {/* Tooltip */}
               <button
                 onClick={() =>
@@ -40,24 +86,65 @@ function MainApplication() {
               >
                 <HelpCircle size={22} />
               </button>
+
             </div>
           </div>
 
           {/* Chat Area */}
-          <div className="flex flex-col justify-end text-center h-[70%] mb-5 w-full overflow-hidden">
-            <div className="mb-2">
-              <p className="text-[var(--font-white)] text-3xl">
-                What sound are you imagining today?
-              </p>
+          <div
+            onClick={() => setActiveControl(null)}
+            className="flex flex-col justify-end text-center h-[70%] mb-5 w-full overflow-hidden"
+          >
+            {messages.length === 0 && (
+              <div className="mb-2">
+                <p className="text-[var(--font-white)] text-3xl">
+                  What sound are you imagining today?
+                </p>
+              </div>
+            )}
+
+            <div
+              className="flex flex-col gap-1 px-4 py-2 overflow-y-auto scroll-smooth"
+              ref={chatRef}
+            >
+              {messages.map((msg, index) => (
+                <div key={index} className="flex items-start">
+                  <div
+                    className={`px-5 py-4 rounded-xl w-full flex items-center gap-4 ${
+                      msg.role === 'user'
+                        ? 'bg-[var(--background-2)]'
+                        : ''
+                    } text-[var(--font-white)]`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <img
+                        src="/src/assets/icon.png"
+                        alt="System Icon"
+                        className="w-9 h-9 object-contain"
+                      />
+                    )}
+                    <span>{msg.text}</span>
+                  </div>
+                </div>
+              ))}
             </div>
+
           </div>
 
           {/* Prompt Area */}
           <div className="flex flex-col bg-[var(--background-2)] p-6 gap-5 h-[17.5%] w-full rounded-3xl overflow-hidden">
           
             <input
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onClick={() => setActiveControl(null)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               type="text"
-              placeholder="Describe it here. Try ‘calm beach waves’ or ‘birds chirping.’"
+              placeholder={
+                messages.length === 0
+                  ? "Describe it here. Try ‘calm beach waves’ or ‘birds chirping.’"
+                  : "Not quite right? Say what to change—or use the controls."
+              }
               className="w-full bg-transparent text-[var(--font-white)] placeholder-[var(--font-gray)] text-lg focus:outline-none"
             />
 
@@ -97,7 +184,10 @@ function MainApplication() {
               </div>
 
               {/* Submit Arrow */}
-              <button className="bg-[var(--sound-button)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition">
+              <button
+                onClick={handleSendMessage}
+                className="bg-[var(--sound-button)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition"
+              >
                 <ArrowUp size={25} />
               </button>
             </div>
@@ -158,17 +248,44 @@ function MainApplication() {
 
             {/*Tooltip Panel*/}
             {activeControl === 'info' && (
-              <div className="absolute bottom-40 left-155 translate-y-[-100%] w-100 p-5 bg-[var(--background-3)] text-white rounded-2xl shadow-lg z-50">
+              <div className="absolute bottom-52 left-155 translate-y-[-100%] w-100 p-5 bg-[var(--background-3)] text-white rounded-2xl shadow-lg z-50">
                 <h3 className="text-lg font-medium text-[var(--font-white)] mb-2">About Hearsona</h3>
                 <p className="text-base text-[var(--font-gray)]">
                   Hearsona is a tool that helps you create sounds using just words. Type what you want to hear, and the system will turn it into audio for you.
-                  <br /><br />
                   You can also adjust Pitch, Loudness, and Duration to make the sound match your needs.
                   <br /><br />
                   It’s designed to be easy to use, with live previews and simple controls, so you can explore and adjust your sound until it feels just right.
                 </p>
               </div>
             )}
+
+            {showConfirm && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-50">
+                <div className="bg-[var(--background-2)] p-10 rounded-2xl text-center shadow-xl w-[90%] max-w-sm">
+                  <p className="text-[var(--font-white)] text-lg mb-4">
+                    Are you sure you want to start over?
+                  </p>
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={() => {
+                        setMessages([]);
+                        setShowConfirm(false);
+                      }}
+                      className="bg-[var(--background-3)] text-[var(--font-white)] px-4 py-2 rounded-xl hover:bg-red-700 transition"
+                    >
+                      Start Over
+                    </button>
+                    <button
+                      onClick={() => setShowConfirm(false)}
+                      className="bg-[var(--background-3)] text-[var(--font-white)] px-4 py-2 rounded-xl hover:bg-[#3a3a3a] transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
           </div>
         </div>
