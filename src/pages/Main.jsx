@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useEffect, useRef } from 'react';
 
-import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Music2 } from 'lucide-react';
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Upload } from 'lucide-react';
 
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
@@ -14,8 +14,11 @@ function MainApplication() {
   const [userInput, setUserInput] = useState('');
 
   const chatRef = useRef(null);
+  const versionRef = useRef(null);
 
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [versions, setVersions] = useState([]);
 
   const handleSendMessage = () => {
     if (!userInput.trim()) return;
@@ -29,6 +32,14 @@ function MainApplication() {
       const systemMessage = { role: 'assistant', text: responseText };
 
       setMessages((prev) => [...prev, systemMessage]);
+
+      setVersions((prev) => [
+        ...prev,
+        {
+          versionNumber: prev.length + 1,
+          content: responseText, // or store additional data here
+        },
+      ]);
     }, 500);
   };
 
@@ -50,6 +61,12 @@ function MainApplication() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (versionRef.current) {
+      versionRef.current.scrollTop = 0;
+    }
+  }, [versions]);
+
   return (
     <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
 
@@ -70,11 +87,20 @@ function MainApplication() {
               
               {/* Start Over */}
               <button
-                onClick={() => setShowConfirm(true)}
-                className="flex items-center gap-2.5 bg-[var(--background-2)] text-[var(--font-white)] px-3 py-2 rounded-2xl hover:bg-[#2a2a2a] transition"
+                onClick={() => {
+                  if (messages.length > 0) setShowConfirm(true);
+                }}
+                disabled={messages.length === 0}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl transition
+                  ${messages.length === 0
+                    ? 'bg-[var(--disabled-button)] text-[var(--disabled-text)]'
+                    : 'bg-[var(--background-2)] text-[var(--font-white)] hover:bg-[#3a3a3a]'}
+                `}
               >
                 <RotateCcw size={20} />
-                <span className="text-lg font-medium">Start Over</span>
+                <span className="text-lg font-medium">
+                  Start Over
+                </span>
               </button>
 
               {/* Tooltip */}
@@ -82,7 +108,7 @@ function MainApplication() {
                 onClick={() =>
                   setActiveControl(activeControl === 'info' ? null : 'info')
                 }
-                className="bg-[var(--background-2)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#2a2a2a] transition"
+                className="bg-[var(--background-2)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition"
               >
                 <HelpCircle size={22} />
               </button>
@@ -269,6 +295,7 @@ function MainApplication() {
                     <button
                       onClick={() => {
                         setMessages([]);
+                        setVersions([]);
                         setShowConfirm(false);
                       }}
                       className="bg-[var(--background-3)] text-[var(--font-white)] px-4 py-2 rounded-xl hover:bg-red-700 transition"
@@ -290,10 +317,33 @@ function MainApplication() {
           </div>
         </div>
 
-        {/* Right Panel Placeholder */}
-        <div className="flex-1 rounded-3xl w-[50%] bg-[var(--background-2)]">
-          {/* Right side content goes here */}
+        {/* Right Panel */}
+        <div
+          className="rounded-3xl p-6 overflow-y-auto w-[50%] bg-[var(--background-2)] scroll-smooth"
+          ref={versionRef}
+          onClick={() => setActiveControl(null)}
+        >
+          <div className="flex flex-col gap-6.5">
+            {versions
+              .slice()
+              .reverse()
+              .map((version) => (
+                <div
+                  key={version.versionNumber}
+                  className="bg-[var(--sound-button)] px-8 py-5 rounded-2xl flex justify-between items-center"
+                >
+                  <p className="text-[var(--font-white)] text-xl font-medium">
+                    Version {version.versionNumber}
+                  </p>
+                  <button className="flex items-center gap-3 bg-[var(--export-button)] text-[var(--font-white)] px-3 py-2 rounded-2xl hover:bg-[#4a4a4a] transition">
+                    <Upload size={20} />
+                    <span className="text-[var(--font-white)] text-lg font-medium">Export</span>
+                  </button>
+                </div>
+              ))}
+          </div>
         </div>
+
       </div>
     </div>
   )
