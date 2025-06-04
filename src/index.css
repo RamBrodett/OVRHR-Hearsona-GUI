@@ -2,11 +2,12 @@
 
 :root {
   font-family: system-ui;
---font-color: #DBE4DB;
---placeholder-color: #6F6B6B;
+--font-white: #DBE4DB;
+--font-gray: #6F6B6B;
 --sound-button: #2A2B2A;
 --background: #171717;
 --background-2: #212121;
+--background-3: #2D2D2D;
 --foreground: #F0F0F0;        /* Bright but not harsh text */
 --accent-color-1: #E0E0E0;    /* Light gray (UI borders, subtle elements) */
 --accent-color-2: #8A8A8A;    /* Muted gray (secondary text/icons) */
