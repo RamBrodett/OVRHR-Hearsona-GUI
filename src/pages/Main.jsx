@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useEffect, useRef } from 'react';
 
-import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Upload } from 'lucide-react';
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Upload, Settings } from 'lucide-react';
 
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
@@ -20,40 +20,66 @@ function MainApplication() {
 
   const [versions, setVersions] = useState([]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async() => {
     if (!userInput.trim()) return;
 
     const newUserMessage = { role: 'user', text: userInput.trim() };
     setMessages((prev) => [...prev, newUserMessage]);
     setUserInput('');
 
-    setTimeout(() => {
-      const responseText = generateSystemResponse(userInput);
-      const systemMessage = { role: 'assistant', text: responseText };
+    try{
+      const response = await fetch('api/query',{
+        method: 'POST',
+        headers:{'Content-Type': 'application/json',},
+        body: JSON.stringify({
+          user_input : userInput.trim(),
+          settings:{
+            pitch: pitch,
+            loudness: loudness,
+            duration: duration
+          }
+        })
+      });
 
-      setMessages((prev) => [...prev, systemMessage]);
+      const data = await response.json();
 
-      setVersions((prev) => [
-        ...prev,
-        {
-          versionNumber: prev.length + 1,
-          content: responseText, // or store additional data here
-        },
-      ]);
-    }, 500);
-  };
+      if(data.status === "success"){
+        const responseText = data.message;
+        const audio_base64 = data.audio_base64;
+        console.log(responseText)
 
-  const generateSystemResponse = (input) => {
-    if (input.toLowerCase().includes('pitch')) {
-      return "Raising the pitch a bit — let’s brighten it up.";
-    } else if (input.toLowerCase().includes('louder')) {
-      return "Turning up the volume — let's make it louder.";
-    } else if (input.toLowerCase().includes('longer')) {
-      return "Extending the duration — more time to enjoy the sound.";
-    } else {
-      return `Got it! Generating a "${input}" sound for you...`;
+        const systemMessage = {role: 'assistant', text: responseText};
+        setMessages((prev)=> [...prev, systemMessage]);
+
+        if(audio_base64 !== null){
+          setVersions((prev)=> [...prev,{
+            versionNumber: prev.length + 1,
+            content: base64ToBlob(audio_base64)
+          }])
+        }
+      }
+    } catch (error){
+      console.log(error)
     }
   };
+
+  function base64ToBlob(base64, mimeType = 'audio/wav') {
+    try {
+      const binaryString = atob(base64); 
+      const byteNumbers = new Array(binaryString.length);
+      
+      for (let i = 0; i < binaryString.length; i++) {
+        byteNumbers[i] = binaryString.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      return new Blob([byteArray], { type: mimeType });
+    } catch (error) {
+      console.error('Error converting base64 to Blob:', error);
+      return null;
+    }
+}
+
 
   useEffect(() => {
   if (chatRef.current) {
