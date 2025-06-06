@@ -12,7 +12,7 @@ function MainApplication() {
   
   const [history, setHistory] = useState([]);
 
-  {/* Sound Parameters */}
+  /* Sound Parameters */
   const [pitch, setPitch] = useState(440);
   const [loudness, setLoudness] = useState(-20);
   const [duration, setDuration] = useState(10);
@@ -22,10 +22,10 @@ function MainApplication() {
   const chatRef = useRef(null);
   const versionRef = useRef(null);
 
-  {/* Start Over Confirmation Panel */}
+  /* Start Over Confirmation Panel */
   const [showConfirm, setShowConfirm] = useState(false);
 
-  {/* Expanded Versional Panel */}
+  /* Expanded Versional Panel */
   const [expandedVersion, setExpandedVersion] = useState(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function MainApplication() {
     }
   }, [versions]);
 
-  {/* Export Chat */}
+  /* Export Chat */
   const exportChat = () => {
     const fileName = prompt("Enter ID:", "chat-export");
 
