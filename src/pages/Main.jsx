@@ -7,29 +7,22 @@ import VersionsComponent from '../components/versionsComponent';
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([{role: 'user', text: 'Hello'}]);
   const [userInput, setUserInput] = useState('');
   const [versions, setVersions] = useState([]);
-  
-  const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   /* Sound Parameters */
-  const [pitch, setPitch] = useState(440);
-  const [loudness, setLoudness] = useState(-20);
-  const [duration, setDuration] = useState(10);
+  const [pitch, setPitch] = useState(400);
+  const [loudness, setLoudness] = useState(65);
+  const [duration, setDuration] = useState(5.12);
 
-  const [isPitchActive, setIsPitchActive] = useState(false);
   const [isPitchAdjusted, setIsPitchAdjusted] = useState(false);
-
-  const [isLoudnessActive, setIsLoudnessActive] = useState(false);
   const [isLoudnessAdjusted, setIsLoudnessAdjusted] = useState(false);
-
-  const [isDurationActive, setIsDurationActive] = useState(false);
   const [isDurationAdjusted, setIsDurationAdjusted] = useState(false);
 
 
   {/* Autoscroll to the latest chat/version */}
-  
   const chatRef = useRef(null);
   const versionRef = useRef(null);
 
@@ -38,6 +31,8 @@ function MainApplication() {
 
   /* Expanded Versional Panel */
   const [expandedVersion, setExpandedVersion] = useState(null);
+
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
   if (chatRef.current) {
@@ -52,34 +47,106 @@ function MainApplication() {
   }, [versions]);
 
   /* Export Chat */
-  const exportChat = () => {
-    const fileName = prompt("Enter ID:", "chat-export");
+  const exportChat = async () => {
+    const fileName = prompt("Enter ID:", "Id Here");
 
     if (!fileName) return;
 
-    const content = history
-      .map(msg => `${msg.role.toUpperCase()}: ${msg.text}`)
-      .join('\n\n');
+    try {
+      const response = await fetch('api/exportChat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_input: fileName }),
+      });
 
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+      const data = await response.json();
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileName}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      if (data.status === "good") {
+        alert("Export successful!");
+      } else {
+        alert("Export failed: " + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred while exporting the chat.");
+    }
   };
+  
+  const newUser = async () => {
+    try {
+      const response = await fetch('api/newUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === "new user session started") {
+         // Convert logs to text
+        const logText = logs.join('\n')
+        const blob = new Blob([logText], { type: 'text/plain' })
+        const url = URL.createObjectURL(blob)
+
+        const timestamp = new Date().toISOString()
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${timestamp}_logs.txt`;
+        a.click()
+
+        URL.revokeObjectURL(url)
+
+        // Reset logs
+        setLogs([])
+        alert("New user session started");
+      } else {
+        alert("failed new user session restart" + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred while creating new user session.");
+    }
+  };
+
+  const handleStartOver = async() => {
+    try {
+      const response = await fetch('api/startOver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === "new session started") {
+        alert("New session started");
+      } else {
+        alert("failed new session restart" + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred while creating new session.");
+    }
+  }
+
 
   const handleSendMessage = async() => {
     if (!userInput.trim()) return;
-
+    setIsLoading(true)
     const newUserMessage = { role: 'user', text: userInput.trim() };
     setMessages((prev) => [...prev, newUserMessage]);
-    setHistory((prev) => [...prev, newUserMessage]);
     setUserInput('');
+
+    const settings = {};
+    if (isPitchAdjusted) settings.pitch = pitch;
+    if (isLoudnessAdjusted) {
+      if (loudness < 30) {
+        settings.loudness = 'very soft';
+      } else if (loudness >= 30 && loudness < 50) {
+        settings.loudness = 'soft';
+      } else if (loudness >= 50 && loudness < 65) {
+        settings.loudness = 'medium';
+      } else if (loudness >= 65 && loudness < 80) {
+        settings.loudness = 'loud';
+      } else {
+        settings.loudness = 'very loud';
+      }
+    }
+    if (isDurationAdjusted) settings.duration = duration;
 
     try{
       const response = await fetch('api/query',{
@@ -87,11 +154,7 @@ function MainApplication() {
         headers:{'Content-Type': 'application/json',},
         body: JSON.stringify({
           user_input : userInput.trim(),
-          settings:{
-            pitch: pitch,
-            loudness: loudness,
-            duration: duration
-          }
+          settings : settings
         })
       });
 
@@ -100,12 +163,9 @@ function MainApplication() {
       if(data.status === "success"){
         const responseText = data.message;
         const audio_base64 = data.audio_base64;
-        console.log(responseText)
 
         const systemMessage = {role: 'assistant', text: responseText};
         setMessages((prev)=> [...prev, systemMessage]);
-        setHistory((prev) => [...prev, systemMessage]);
-
         if(audio_base64 !== null){
           const audioBlob = base64ToBlob(audio_base64);
           const audioUrl = URL.createObjectURL(audioBlob);
@@ -118,6 +178,7 @@ function MainApplication() {
     } catch (error){
       console.log(error)
     }
+    setIsLoading(false)
   };
 
   function base64ToBlob(base64, mimeType = 'audio/wav') {
@@ -135,7 +196,12 @@ function MainApplication() {
       console.error('Error converting base64 to Blob:', error);
       return null;
     }
-}
+  };
+
+  const logEvent = (event) => {
+    const timestamp = new Date().toISOString()
+    setLogs((prev) => [...prev, `[${timestamp}] ${event}`])
+  }
 
   return (
     <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
@@ -158,11 +224,12 @@ function MainApplication() {
               {/* Start Over */}
               <button
                 onClick={() => {
+                  logEvent ("Clicked start over button")
                   if (messages.length > 0) setShowConfirm(true);
                 }}
-                disabled={messages.length === 0}
+                disabled={messages.length === 0 || isLoading}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl transition
-                  ${messages.length === 0
+                  ${messages.length === 0 || isLoading
                     ? 'bg-[var(--disabled-button)] text-[var(--disabled-text)]'
                     : 'bg-[var(--background-2)] text-[var(--font-white)] hover:bg-[#3a3a3a]'}
                 `}
@@ -176,9 +243,10 @@ function MainApplication() {
               {/* Tooltip */}
               <div className="relative group inline-block">
                 <button
-                  onClick={() =>
+                  onClick={() =>{
+                    logEvent ("Clicked tooltip button")
                     setActiveControl(activeControl === 'info' ? null : 'info')
-                  }
+                  }}
                   className="bg-[var(--background-2)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition"
                 >
                   <HelpCircle size={22} />
@@ -187,9 +255,10 @@ function MainApplication() {
 
               {/* More Options (New User and Export Chat) */}
               <button
-                onClick={() =>
+                onClick={() =>{
+                  logEvent ("Clicked burger button")
                   setActiveControl(activeControl === 'options' ? null : 'options')
-                }
+                }}
                 className="bg-[var(--background-2)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition"
               >
                 <Menu size={22} />
@@ -241,6 +310,22 @@ function MainApplication() {
                   </div>
                 </div>
               ))}
+              {isLoading &&(
+                <div className="flex items-start">
+                  <div
+                    className={`px-5 py-4 rounded-xl w-full flex items-start gap-4 text-[var(--font-white)]`}
+                  >
+                      <div className="flex-shrink-0 flex items-center h-full">
+                      <img
+                        src="/src/assets/icon.png"
+                        alt="System Icon"
+                        className="w-9 h-9 object-contain"
+                      />
+                    </div>
+                    <div className="animate-spin w-6 h-6 border-2 self-center border-white border-t-transparent rounded-full"></div>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -251,7 +336,9 @@ function MainApplication() {
             <input
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
-              onClick={() => setActiveControl(null)}
+              onClick={() => {setActiveControl(null)
+                logEvent ("Clicked prompt area")
+              }}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               type="text"
               placeholder={
@@ -268,40 +355,56 @@ function MainApplication() {
 
                 {/* Pitch */}
                 <button
-                  onClick={() => setActiveControl('pitch')}
+                  onClick={() => {
+                    logEvent ("Clicked Pitch button")
+                    setActiveControl('pitch')}}
+                  disabled={isLoading}
                   className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
-                    isPitchAdjusted
+                  isLoading
+                    ? 'bg-[var(--disabled-button)] text-[#353535] cursor-not-allowed'
+                    : isPitchAdjusted
                       ? 'bg-white text-black'
                       : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
-                  }`}
+                }`}
+              
                 >
                   <Activity
                     size={20}
-                    className={isPitchAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                    className={ isLoading? `text-[#353535]` :isPitchAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
                   />
                   Pitch
                 </button>
 
                 {/* Loudness */}
                 <button
-                  onClick={() => setActiveControl('loudness')}
-                  className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
-                    isLoudnessAdjusted
-                      ? 'bg-white text-black'
-                      : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
+                  onClick={() => {
+                    logEvent ("Clicked Loudness button")
+                    setActiveControl('loudness')}}
+                    disabled={isLoading}
+                    className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
+                    isLoading
+                      ? 'bg-[var(--disabled-button)] text-[#353535] cursor-not-allowed'
+                      : isLoudnessAdjusted
+                        ? 'bg-white text-black'
+                        : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
                   }`}
                 >
                   <Volume2
                     size={20}
-                    className={isLoudnessAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                    className={isLoading?  `text-[#353535]`:isLoudnessAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
                   />
                   Loudness
                 </button>
 
                 {/* Duration */}
                 <button
-                  onClick={() => setActiveControl('duration')}
+                  onClick={() => {
+                    logEvent ("Clicked loudness button")
+                    setActiveControl('duration')}}
+                    disabled={isLoading}
                   className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
+                    isLoading
+                    ? 'bg-[var(--disabled-button)] text-[#353535] cursor-not-allowed':
                     isDurationAdjusted
                       ? 'bg-white text-black'
                       : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
@@ -309,7 +412,7 @@ function MainApplication() {
                 >
                   <Clock
                     size={20}
-                    className={isDurationAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                    className={isLoading? `text-[#353535]` : isDurationAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
                   />
                   Duration
                 </button>
@@ -317,10 +420,14 @@ function MainApplication() {
 
               {/* Submit Arrow */}
               <button
-                onClick={handleSendMessage}
-                className="bg-[var(--sound-button)] text-[var(--font-white)] p-3 rounded-2xl hover:bg-[#3a3a3a] transition"
+                onClick={() => {
+                  logEvent ("Clicked Submmit button")
+                  handleSendMessage()
+                }}
+                disabled={isLoading}
+                className={` p-3 rounded-2xl ${isLoading ? `bg-[var(--disabled-button)]`: `bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a] transition1`} `}
               >
-                <ArrowUp size={25} />
+                <ArrowUp size={25} className={`${isLoading?  `text-[#353535]`: ``}`}/>
               </button>
             </div>
 
@@ -335,8 +442,8 @@ function MainApplication() {
 
                   <input
                     type="range"
-                    min="80"
-                    max="1000"
+                    min="400"
+                    max="4000"
                     value={pitch}
                     onChange={(e) => {
                       setPitch(e.target.value);
@@ -346,7 +453,8 @@ function MainApplication() {
                   />
                   <button
                     onClick={() => {
-                      setPitch(440);
+                      logEvent ("Clicked reset pitch")
+                      setPitch(400);
                       setIsPitchAdjusted(false);
                       setActiveControl(null);
                     }}
@@ -370,8 +478,8 @@ function MainApplication() {
 
                   <input
                     type="range"
-                    min="-60"
-                    max="0"
+                    min="30"
+                    max="85"
                     value={loudness}
                     onChange={(e) => {
                       setLoudness(e.target.value);
@@ -381,7 +489,8 @@ function MainApplication() {
                   />
                   <button
                     onClick={() => {
-                      setLoudness(-20);
+                      logEvent ("Clicked reset loudness ")
+                      setLoudness(65);
                       setIsLoudnessAdjusted(false);
                       setActiveControl(null);
                     }}
@@ -405,8 +514,8 @@ function MainApplication() {
 
                   <input
                     type="range"
-                    min="5"
-                    max="60"
+                    min="1"
+                    max="10"
                     value={duration}
                     onChange={(e) => {
                       setDuration(e.target.value);
@@ -416,7 +525,8 @@ function MainApplication() {
                   />
                   <button
                     onClick={() => {
-                      setDuration(15);
+                      logEvent ("Clicked reset duration")
+                      setDuration(5.12);
                       setIsDurationAdjusted(false);
                       setActiveControl(null);
                     }}
@@ -442,11 +552,8 @@ function MainApplication() {
                   <div className="flex justify-center gap-4">
                     <button
                       onClick={() => {
-                        setHistory((prev) => [
-                          ...prev,
-                          { role: 'system', text: '--- User clicked Start Over ---' },
-                        ]);
-
+                        logEvent ("Clicked start over button")
+                        handleStartOver();
                         setMessages([]);
                         setVersions([]);
                         setShowConfirm(false);
@@ -486,11 +593,13 @@ function MainApplication() {
                 {/* New User */}
                 <button
                   onClick={() => {
+                      newUser();
+                      logEvent ("Clicked New user button")
                       setMessages([]);
                       setVersions([]);
-                      setHistory([]);
                       setActiveControl(null);
                   }}
+                  disabled={isLoading}
                   className="flex items-center gap-2.5 px-3 py-2 w-39 rounded-2xl transition bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]"
                 >
                   <Plus size={20} />
@@ -502,9 +611,11 @@ function MainApplication() {
                 {/* Export Chat */}
                 <button
                   onClick={() => {
+                    logEvent ("Clicked Export chat")
                     exportChat();
                     setActiveControl(null);
                   }}
+                  disabled={isLoading}
                   className="flex items-center gap-2.5 px-3 py-2 w-39 mt-2 rounded-2xl transition bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]"
                 >
                   <MessageSquareShare size={20} />
@@ -525,7 +636,7 @@ function MainApplication() {
           ref={versionRef}
           onClick={() => setActiveControl(null)}
         >
-          <VersionsComponent expandedVersion={expandedVersion} setExpandedVersion={setExpandedVersion} versions={versions} />
+          <VersionsComponent expandedVersion={expandedVersion} setExpandedVersion={setExpandedVersion} versions={versions} logEvent={logEvent} />
        </div>
       </div>
     </div>
