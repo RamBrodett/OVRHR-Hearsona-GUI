@@ -3,7 +3,7 @@ import {  Upload } from 'lucide-react'
 import AudioPlayer from './audioPlayer'
 
 
-const versionsComponent = ({versions, expandedVersion, setExpandedVersion}) => {
+const versionsComponent = ({versions, expandedVersion, setExpandedVersion, logEvent}) => {
 
   return (
     <div className="flex flex-col gap-6.5">
@@ -21,12 +21,13 @@ const versionsComponent = ({versions, expandedVersion, setExpandedVersion}) => {
                         ? 'bg-[var(--background-3)]'
                         : 'bg-[var(--sound-button)]'
                     }`}
-                    onClick={() =>
+                    onClick={() =>{
+                      logEvent (`Expanded version ${version.versionNumber}`)
                       setExpandedVersion(
                         expandedVersion === version.versionNumber
                           ? null
                           : version.versionNumber
-                      )
+                      )}
                     }
                   >
                     <p className="text-[var(--font-white)] text-xl font-medium">
@@ -44,7 +45,7 @@ const versionsComponent = ({versions, expandedVersion, setExpandedVersion}) => {
                   {/* Expanded Panel */}
                   {expandedVersion === version.versionNumber && (
                     <div className="bg-[#171717] px-6 py-5 space-y-4">
-                      <AudioPlayer audioUrl={version.audioUrl} />
+                      <AudioPlayer audioUrl={version.audioUrl} logEvent={logEvent}/>
                     </div>
                   )}
                 </div>

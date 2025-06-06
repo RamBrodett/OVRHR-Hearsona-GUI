@@ -1,77 +1,143 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause } from 'lucide-react'
-import { Howl } from 'howler';
-import SiriWave from 'siriwave';
+import { Play, Pause } from 'lucide-react';
 
+const AudioPlayer = ({ audioUrl, logEvent }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const analyserRef = useRef(null);
+  const audioCtxRef = useRef(null);
 
-const AudioPlayer = ({audioUrl}) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const howlRef = useRef(null);
-    const waveRef = useRef(null);
-    const siriRef = useRef(null);
+  // Resize canvas to container size & update internal pixel size
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.parentNode.getBoundingClientRect(); // use parent container size
 
-    useEffect(() => {
-      const sound = new Howl({
-        src: [audioUrl],
-        html5: true,
-        onend: () => {
-          setIsPlaying(false);
-          siriRef.current?.stop();
-        },
-        onplay: () => {
-          siriRef.current?.start();
-          setIsPlaying(true);
-        },
-        onpause: () => {
-          siriRef.current?.stop();
-          setIsPlaying(false);
-        },
-        onstop: () => {
-          siriRef.current?.stop();
-          setIsPlaying(false);
-        },
-      });
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
 
-      howlRef.current = sound;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  };
 
-      siriRef.current = new SiriWave({
-        container: waveRef.current,
-        style: 'ios',
-        height: 100,
-        amplitude: 1,
-        speed: 0,
-        autostart: false,
-      });
+  useEffect(() => {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, []);
 
-      return () => {
-        sound.unload();
-        siriRef.current?.stop();
-      };
-    }, [audioUrl]);
+  useEffect(() => {
+    const audio = new Audio(audioUrl);
+    audio.crossOrigin = 'anonymous';
+    audioRef.current = audio;
 
-    const togglePlayback = () => {
-      const sound = howlRef.current;
-      if (!sound) return;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
 
-      if (isPlaying) {
-        sound.pause();
-      } else {
-        sound.play();
+    analyserRef.current = analyser;
+    audioCtxRef.current = audioCtx;
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+      cancelAnimationFrame(animationRef.current);
+      audioCtx.close();
+    };
+  }, [audioUrl]);
+
+  const drawWaveform = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const rect = canvas.parentNode.getBoundingClientRect();
+
+    const draw = () => {
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#DBE4DB';
+      ctx.beginPath();
+
+      const sliceWidth = rect.width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * rect.height) / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
       }
+
+      ctx.lineTo(rect.width, rect.height / 2);
+      ctx.stroke();
+
+      animationRef.current = requestAnimationFrame(draw);
     };
 
-    return (
-        <div className="flex flex-col gap-3">
-        <div ref={waveRef} className="rounded-xl overflow-hidden bg-amber-50" />
-        <button
-            onClick={togglePlayback}
-            className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-white)] px-4 py-2 rounded-xl hover:bg-[#4a4a4a] transition"
-        >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-            {isPlaying ? 'Pause' : 'Play'}
-        </button>
-        </div>
-    );
+    draw();
+  };
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    const ctx = audioCtxRef.current;
+
+    if (!audio || !ctx) return;
+
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
+    if (isPlaying) {
+      audio.pause();
+      logEvent ("toggle pause")
+      cancelAnimationFrame(animationRef.current);
+    } else {
+      audio.play();
+      logEvent ("toggle play")
+      drawWaveform();
+    }
+
+    setIsPlaying(!isPlaying);
+  };
+
+  return (
+    <div
+      className="flex flex-col gap-3"
+      style={{ width: '100%', height: '100px' }} // fixed height here but full width
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: '100%', height: '100%' }}
+        className="rounded-xl overflow-hidden"
+      />
+      <button
+        onClick={togglePlayback}
+        className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-white)] px-4 py-2 rounded-xl hover:bg-[#4a4a4a] transition"
+      >
+        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+    </div>
+  );
 };
 
 export default AudioPlayer;
