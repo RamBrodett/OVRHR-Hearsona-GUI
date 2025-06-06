@@ -7,10 +7,10 @@ import VersionsComponent from '../components/versionsComponent';
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
 
-  const [messages, setMessages] = useState([{role: 'user', text: 'Hello'}]);
+  const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [versions, setVersions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   /* Sound Parameters */
   const [pitch, setPitch] = useState(400);
