@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useEffect, useRef } from 'react';
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity,  Menu, Plus, MessageSquareShare} from 'lucide-react';
 
-import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Upload, Settings, Menu, Plus, MessageSquareShare, AudioWaveform } from 'lucide-react';
+import VersionsComponent from '../components/versionsComponent';
 
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
@@ -17,8 +18,7 @@ function MainApplication() {
   const [loudness, setLoudness] = useState(-20);
   const [duration, setDuration] = useState(10);
   
-
-  {/* Autoscroll to the latest chat/version */}
+  /* Autoscroll to the latest chat/version */
   const chatRef = useRef(null);
   const versionRef = useRef(null);
 
@@ -96,9 +96,11 @@ function MainApplication() {
         setHistory((prev) => [...prev, systemMessage]);
 
         if(audio_base64 !== null){
+          const audioBlob = base64ToBlob(audio_base64);
+          const audioUrl = URL.createObjectURL(audioBlob);
           setVersions((prev)=> [...prev,{
             versionNumber: prev.length + 1,
-            content: base64ToBlob(audio_base64)
+            audioUrl: audioUrl
           }])
         }
       }
@@ -453,58 +455,8 @@ function MainApplication() {
           ref={versionRef}
           onClick={() => setActiveControl(null)}
         >
-          <div className="flex flex-col gap-6.5">
-            {versions
-              .slice()
-              .reverse()
-              .map((version) => (
-                <div
-                  key={version.versionNumber}
-                  className="rounded-2xl overflow-hidden border border-[var(--background-3)]"
-                >
-                  <div
-                    className={`flex justify-between items-center px-8 py-5 cursor-pointer transition-colors ${
-                      expandedVersion === version.versionNumber
-                        ? 'bg-[var(--background-3)]'
-                        : 'bg-[var(--sound-button)]'
-                    }`}
-                    onClick={() =>
-                      setExpandedVersion(
-                        expandedVersion === version.versionNumber
-                          ? null
-                          : version.versionNumber
-                      )
-                    }
-                  >
-                    <p className="text-[var(--font-white)] text-xl font-medium">
-                      Version {version.versionNumber}
-                    </p>
-
-                      <button className="flex items-center gap-3 bg-[var(--export-button)] text-[var(--font-white)] px-3 py-2 rounded-2xl hover:bg-[#4a4a4a] transition">
-                        <Upload size={20} />
-                        <span className="text-[var(--font-white)] text-lg font-medium">
-                          Export
-                        </span>
-                      </button>
-                  </div>
-
-                  {/* Expanded Panel */}
-                  {expandedVersion === version.versionNumber && (
-                    <div className="bg-[#171717] px-6 py-5 space-y-4">
-                      <AudioWaveform size={50} />
-
-                      <audio controls src={version.audioUrl} className="w-full">
-                      </audio>
-                    </div>
-                  )}
-                </div>
-              ))}
-          </div>
-
-
-
-        </div>
-
+          <VersionsComponent expandedVersion={expandedVersion} setExpandedVersion={setExpandedVersion} versions={versions} />
+       </div>
       </div>
     </div>
   )
