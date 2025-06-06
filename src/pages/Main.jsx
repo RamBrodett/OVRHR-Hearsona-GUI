@@ -6,19 +6,21 @@ import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity, Upload, Setti
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
   
+  {/* Sound Parameters */}
   const [pitch, setPitch] = useState(440);
   const [loudness, setLoudness] = useState(-20);
   const [duration, setDuration] = useState(10);
 
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
+  const [versions, setVersions] = useState([]);
 
+  {/* Autoscroll to the latest chat/version */}
   const chatRef = useRef(null);
   const versionRef = useRef(null);
 
+  {/* Start Over Confirmation Panel */}
   const [showConfirm, setShowConfirm] = useState(false);
-
-  const [versions, setVersions] = useState([]);
 
   const handleSendMessage = async() => {
     if (!userInput.trim()) return;
@@ -65,7 +67,7 @@ function MainApplication() {
 
   function base64ToBlob(base64, mimeType = 'audio/wav') {
     try {
-      const binaryString = atob(base64); 
+      const binaryString = atob(base64);
       const byteNumbers = new Array(binaryString.length);
       
       for (let i = 0; i < binaryString.length; i++) {
@@ -79,7 +81,6 @@ function MainApplication() {
       return null;
     }
 }
-
 
   useEffect(() => {
   if (chatRef.current) {
@@ -149,6 +150,7 @@ function MainApplication() {
           >
             {messages.length === 0 && (
               <div className="mb-2">
+                {/* Prompt Question */}
                 <p className="text-[var(--font-white)] text-3xl">
                   What sound are you imagining today?
                 </p>
@@ -161,21 +163,26 @@ function MainApplication() {
             >
               {messages.map((msg, index) => (
                 <div key={index} className="flex items-start">
+                  {/* Chat Boxes */}
                   <div
-                    className={`px-5 py-4 rounded-xl w-full flex items-center gap-4 ${
+                    className={`px-5 py-4 rounded-xl w-full max-w-[100%] flex items-start gap-4 ${
                       msg.role === 'user'
                         ? 'bg-[var(--background-2)]'
                         : ''
                     } text-[var(--font-white)]`}
                   >
                     {msg.role === 'assistant' && (
+                      <div className="flex-shrink-0 flex items-center h-full">
                       <img
                         src="/src/assets/icon.png"
                         alt="System Icon"
                         className="w-9 h-9 object-contain"
                       />
+                    </div>
                     )}
-                    <span>{msg.text}</span>
+                    <span className="break-words whitespace-pre-wrap w-full text-left overflow-hidden">
+                      {msg.text}
+                    </span>
                   </div>
                 </div>
               ))}
