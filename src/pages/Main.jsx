@@ -17,8 +17,19 @@ function MainApplication() {
   const [pitch, setPitch] = useState(440);
   const [loudness, setLoudness] = useState(-20);
   const [duration, setDuration] = useState(10);
+
+  const [isPitchActive, setIsPitchActive] = useState(false);
+  const [isPitchAdjusted, setIsPitchAdjusted] = useState(false);
+
+  const [isLoudnessActive, setIsLoudnessActive] = useState(false);
+  const [isLoudnessAdjusted, setIsLoudnessAdjusted] = useState(false);
+
+  const [isDurationActive, setIsDurationActive] = useState(false);
+  const [isDurationAdjusted, setIsDurationAdjusted] = useState(false);
+
+
+  {/* Autoscroll to the latest chat/version */}
   
-  /* Autoscroll to the latest chat/version */
   const chatRef = useRef(null);
   const versionRef = useRef(null);
 
@@ -254,35 +265,53 @@ function MainApplication() {
             {/* Controls */}
             <div className="flex justify-between items-center relative z-10">
               <div className="flex gap-2.5">
-                
+
                 {/* Pitch */}
                 <button
-                  onClick={() =>
-                    setActiveControl(activeControl === 'pitch' ? null : 'pitch')
-                  }
-                  className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-white)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition"
+                  onClick={() => setActiveControl('pitch')}
+                  className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
+                    isPitchAdjusted
+                      ? 'bg-white text-black'
+                      : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
+                  }`}
                 >
-                <Activity size={20} /> Pitch
+                  <Activity
+                    size={20}
+                    className={isPitchAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                  />
+                  Pitch
                 </button>
 
                 {/* Loudness */}
                 <button
-                  onClick={() =>
-                    setActiveControl(activeControl === 'loudness' ? null : 'loudness')
-                  }
-                  className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-white)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition"
+                  onClick={() => setActiveControl('loudness')}
+                  className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
+                    isLoudnessAdjusted
+                      ? 'bg-white text-black'
+                      : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
+                  }`}
                 >
-                  <Volume2 size={20} /> Loudness
+                  <Volume2
+                    size={20}
+                    className={isLoudnessAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                  />
+                  Loudness
                 </button>
 
                 {/* Duration */}
                 <button
-                  onClick={() =>
-                    setActiveControl(activeControl === 'duration' ? null : 'duration')
-                  }
-                  className="flex items-center gap-2 bg-[var(--sound-button)] text-[var(--font-white)] text-lg font-medium px-4 py-2 rounded-2xl hover:bg-[#3a3a3a] transition"
+                  onClick={() => setActiveControl('duration')}
+                  className={`flex items-center gap-2 text-lg font-medium px-4 py-2 rounded-2xl transition ${
+                    isDurationAdjusted
+                      ? 'bg-white text-black'
+                      : 'bg-[var(--sound-button)] text-[var(--font-white)] hover:bg-[#3a3a3a]'
+                  }`}
                 >
-                  <Clock size={20} /> Duration
+                  <Clock
+                    size={20}
+                    className={isDurationAdjusted ? 'text-black' : 'text-[var(--font-white)]'}
+                  />
+                  Duration
                 </button>
               </div>
 
@@ -297,7 +326,7 @@ function MainApplication() {
 
             {/*Pitch Panel*/}
             {activeControl === 'pitch' && (
-              <div className="absolute bottom-9 left-17 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+              <div className="absolute bottom-11.5 left-17 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
                 <div className="flex justify-between text-base mb-2">
                   <span className="text-[var(--font-gray)]">Pitch</span>
                   <span className="text-[var(--font-white)]">{pitch} Hz</span>
@@ -309,15 +338,22 @@ function MainApplication() {
                     min="80"
                     max="1000"
                     value={pitch}
-                    onChange={(e) => setPitch(e.target.value)}
+                    onChange={(e) => {
+                      setPitch(e.target.value);
+                      setIsPitchAdjusted(true);
+                    }}
                     className="w-full accent-white"
-                    />
+                  />
                   <button
-                    onClick={() => setPitch(440)}
+                    onClick={() => {
+                      setPitch(440);
+                      setIsPitchAdjusted(false);
+                      setActiveControl(null);
+                    }}
                     className="text-[var(--font-white)] hover:text-[#cccccc] transition"
-                    title="Reset Pitch"
+                    title="Reset"
                   >
-                    <RotateCcw size={18} />
+                    <RotateCcw size={15} />
                   </button>
                 </div>
               </div>
@@ -325,37 +361,71 @@ function MainApplication() {
 
             {/*Loudness Panel*/}
             {activeControl === 'loudness' && (
-              <div className="absolute bottom-9 left-45 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+              <div className="absolute bottom-11.5 left-45 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
                 <div className="flex justify-between text-base mb-2">
                   <span className="text-[var(--font-gray)]">Loudness</span>
-                  <span className="text-[var(--font-white)]">{loudness} dB</span>
+                  <span className="text-[var(--font-white)]">{loudness} db</span>
                 </div>
-                <input
-                  type="range"
-                  min="-60"
-                  max="0"
-                  value={loudness}
-                  onChange={(e) => setLoudness(e.target.value)}
-                  className="w-full accent-white"
+                <div className="flex items-center gap-2">
+
+                  <input
+                    type="range"
+                    min="-60"
+                    max="0"
+                    value={loudness}
+                    onChange={(e) => {
+                      setLoudness(e.target.value);
+                      setIsLoudnessAdjusted(true);
+                    }}
+                    className="w-full accent-white"
                   />
+                  <button
+                    onClick={() => {
+                      setLoudness(-20);
+                      setIsLoudnessAdjusted(false);
+                      setActiveControl(null);
+                    }}
+                    className="text-[var(--font-white)] hover:text-[#cccccc] transition"
+                    title="Reset"
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                </div>
               </div>
             )}
 
             {/*Duration Panel*/}
             {activeControl === 'duration' && (
-              <div className="absolute bottom-9 left-82.5 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+              <div className="absolute bottom-11.5 left-82.5 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
                 <div className="flex justify-between text-base mb-2">
                   <span className="text-[var(--font-gray)]">Duration</span>
                   <span className="text-[var(--font-white)]">{duration}s</span>
                 </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="60"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="w-full accent-white"
+                <div className="flex items-center gap-2">
+
+                  <input
+                    type="range"
+                    min="5"
+                    max="60"
+                    value={duration}
+                    onChange={(e) => {
+                      setDuration(e.target.value);
+                      setIsDurationAdjusted(true);
+                    }}
+                    className="w-full accent-white"
                   />
+                  <button
+                    onClick={() => {
+                      setDuration(15);
+                      setIsDurationAdjusted(false);
+                      setActiveControl(null);
+                    }}
+                    className="text-[var(--font-white)] hover:text-[#cccccc] transition"
+                    title="Reset"
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                </div>
               </div>
             )}
 
