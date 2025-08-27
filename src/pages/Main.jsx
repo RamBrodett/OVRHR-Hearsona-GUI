@@ -10,7 +10,20 @@ function MainApplication() {
 
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
-  const [versions, setVersions] = useState([]);
+  const [versions, setVersions] = useState([
+    {
+      versionNumber: 1,
+      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
+    },
+    {
+      versionNumber: 2,
+      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
+    },
+    {
+      versionNumber: 3,
+      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
+    }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
 
   /* Sound Parameters - Updated to categorical */
@@ -28,19 +41,21 @@ function MainApplication() {
   
   /* Feature tooltips */
   const tooltips = {
-  pitch: {
-    title: "Pitch",
-    text: "It controls how high or low a sound feels. Lower values make it deeper, while higher values make it sharper or squeaky."
-  },
-  loudness: {
-    title: "Loudness",
-    text: "It controls the volume of the sound. Softer values are quieter and subtle, while louder values make it stand out more."
-  },
-  duration: {
-    title: "Duration",
-    text: "It controls how long the sound plays. Shorter durations give quick sounds, while longer durations sustain the sound."
-  }
-};
+    pitch: {
+      title: "Pitch",
+      text: "It controls how high or low a sound feels. Lower values make it deeper, while higher values make it sharper or squeaky."
+    },
+    loudness: {
+      title: "Loudness",
+      text: "It controls the volume of the sound. Softer values are quieter and subtle, while louder values make it stand out more."
+    },
+    duration: {
+      title: "Duration",
+      text: "It controls how long the sound plays. Shorter durations give quick sounds, while longer durations sustain the sound."
+    }
+  };
+  
+  
 
   {/* Autoscroll to the latest chat/version */}
   const chatRef = useRef(null);
@@ -287,9 +302,32 @@ function MainApplication() {
                 <p className="text-[var(--font-white)] text-3xl">
                   What sound are you imagining today?
                 </p>
+                
+                {/* Helper Text */}
+                <p className="text-[var(--font-white)] opacity-50 text-lg mt-2">
+                  Can’t think? Choose a starting point.
+                </p>
+                
+                {/* Quick Pick Presets */}
+                <div className="flex justify-center gap-3 mt-4 opacity-50">
+                  {["waves", "dogs barking", "gong"].map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserInput(preset); // fills input box
+                        logEvent(`Clicked preset: ${preset}`);
+                      }}
+                    className="px-4 py-2 bg-[var(--sound-button)] text-[var(--font-white)] 
+                     rounded-xl shadow hover:brightness-120 active:scale-95 active:brightness-95 
+                     transition duration-200 ease-in-out" 
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-
             <div
               className="flex flex-col gap-2 px-4 py-2 overflow-y-auto scroll-smooth"
               ref={chatRef}
