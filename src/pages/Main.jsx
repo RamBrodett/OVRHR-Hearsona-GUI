@@ -1,26 +1,46 @@
 import { useState } from 'react'
 import { useEffect, useRef } from 'react';
-import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity,  Menu, Plus, MessageSquareShare} from 'lucide-react';
+import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity,  Menu, Plus, MessageSquareShare, X} from 'lucide-react';
 
 import VersionsComponent from '../components/versionsComponent';
 
 function MainApplication() {
   const [activeControl, setActiveControl] = useState(null);
+  const [activeTooltip, setActiveTooltip] = useState(null);
 
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [versions, setVersions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  /* Sound Parameters */
-  const [pitch, setPitch] = useState(400);
-  const [loudness, setLoudness] = useState(65);
-  const [duration, setDuration] = useState(5.12);
+  /* Sound Parameters - Updated to categorical */
+  const pitchOptions = ['lower', 'low', 'normal', 'high', 'higher'];
+  const loudnessOptions = ['quiet', 'very soft', 'soft', 'medium', 'loud', 'very loud'];
+  const durationOptions = [1, 2, 3, 4, 5, 5.12, 6, 7, 8, 9, 10];
+  
+  const [pitch, setPitch] = useState(2); // Index for 'normal'
+  const [loudness, setLoudness] = useState(3); // Index for 'medium'
+  const [duration, setDuration] = useState(5); // Index for 5.12s
 
   const [isPitchAdjusted, setIsPitchAdjusted] = useState(false);
   const [isLoudnessAdjusted, setIsLoudnessAdjusted] = useState(false);
   const [isDurationAdjusted, setIsDurationAdjusted] = useState(false);
-
+  
+  /* Feature tooltips */
+  const tooltips = {
+  pitch: {
+    title: "Pitch",
+    text: "It controls how high or low a sound feels. Lower values make it deeper, while higher values make it sharper or squeaky."
+  },
+  loudness: {
+    title: "Loudness",
+    text: "It controls the volume of the sound. Softer values are quieter and subtle, while louder values make it stand out more."
+  },
+  duration: {
+    title: "Duration",
+    text: "It controls how long the sound plays. Shorter durations give quick sounds, while longer durations sustain the sound."
+  }
+};
 
   {/* Autoscroll to the latest chat/version */}
   const chatRef = useRef(null);
@@ -123,7 +143,6 @@ function MainApplication() {
     }
   }
 
-
   const handleSendMessage = async() => {
     if (!userInput.trim()) return;
     setIsLoading(true)
@@ -132,20 +151,8 @@ function MainApplication() {
     setUserInput('');
 
     const settings = {};
-    if (isPitchAdjusted) settings.pitch = pitch;
-    if (isLoudnessAdjusted) {
-      if (loudness < 30) {
-        settings.loudness = 'very soft';
-      } else if (loudness >= 30 && loudness < 50) {
-        settings.loudness = 'soft';
-      } else if (loudness >= 50 && loudness < 65) {
-        settings.loudness = 'medium';
-      } else if (loudness >= 65 && loudness < 80) {
-        settings.loudness = 'loud';
-      } else {
-        settings.loudness = 'very loud';
-      }
-    }
+    if (isPitchAdjusted) settings.pitch = pitchOptions[pitch];
+    if (isLoudnessAdjusted) settings.loudness = loudnessOptions[loudness];
     if (isDurationAdjusted) settings.duration = duration;
 
     try{
@@ -202,6 +209,8 @@ function MainApplication() {
     const timestamp = new Date().toISOString()
     setLogs((prev) => [...prev, `[${timestamp}] ${event}`])
   }
+
+
 
   return (
     <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
@@ -343,7 +352,7 @@ function MainApplication() {
               type="text"
               placeholder={
                 messages.length === 0
-                  ? "Describe it here. Try ‘calm beach waves’ or ‘birds chirping.’"
+                  ? "Describe it here. Try 'calm beach waves' or 'birds chirping.'"
                   : "Not quite right? Say what to change—or use the controls."
               }
               className="w-full bg-transparent text-[var(--font-white)] placeholder-[var(--font-gray)] text-lg focus:outline-none"
@@ -433,109 +442,160 @@ function MainApplication() {
 
             {/*Pitch Panel*/}
             {activeControl === 'pitch' && (
-              <div className="absolute bottom-11.5 left-17 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+              <div className="absolute left-17 translate-y-[-70%] w-80 p-5 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
                 <div className="flex justify-between text-base mb-2">
                   <span className="text-[var(--font-gray)]">Pitch</span>
-                  <span className="text-[var(--font-white)]">{pitch} Hz</span>
-                </div>
-                <div className="flex items-center gap-2">
-
-                  <input
-                    type="range"
-                    min="400"
-                    max="4000"
-                    value={pitch}
-                    onChange={(e) => {
-                      setPitch(e.target.value);
-                      setIsPitchAdjusted(true);
-                    }}
-                    className="w-full accent-white"
-                  />
                   <button
-                    onClick={() => {
-                      logEvent ("Clicked reset pitch")
-                      setPitch(400);
-                      setIsPitchAdjusted(false);
-                      setActiveControl(null);
-                    }}
-                    className="text-[var(--font-white)] hover:text-[#cccccc] transition"
-                    title="Reset"
+                    onClick={() =>
+                      setActiveTooltip(activeTooltip === 'pitch' ? null : 'pitch')
+                    }
+                    className="text-[var(--font-gray)] hover:text-white transition"
                   >
-                    <RotateCcw size={15} />
+                    {activeTooltip === 'pitch' ? (
+                      <X size={20} />
+                    ) : (
+                      <HelpCircle size={20} />
+                    )}
                   </button>
                 </div>
+            
+                {activeTooltip === 'pitch' ? (
+                  <div>
+                    <p className="text-sm text-[var(--font-gray)]">
+                      {tooltips.pitch.text}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max={pitchOptions.length - 1}
+                        value={pitch}
+                        onChange={(e) => {
+                          setPitch(parseInt(e.target.value));
+                          setIsPitchAdjusted(true);
+                        }}
+                        className="w-full accent-white"
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-400">
+                      {pitchOptions.map((option, index) => (
+                        <span 
+                          key={index}
+                          className={`capitalize ${index === pitch ? 'text-white font-medium' : ''}`}
+                        >
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
-
+            
             {/*Loudness Panel*/}
             {activeControl === 'loudness' && (
-              <div className="absolute bottom-11.5 left-45 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+              <div className="absolute left-45 translate-y-[-70%] w-96 p-5 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
                 <div className="flex justify-between text-base mb-2">
                   <span className="text-[var(--font-gray)]">Loudness</span>
-                  <span className="text-[var(--font-white)]">{loudness} db</span>
-                </div>
-                <div className="flex items-center gap-2">
-
-                  <input
-                    type="range"
-                    min="30"
-                    max="85"
-                    value={loudness}
-                    onChange={(e) => {
-                      setLoudness(e.target.value);
-                      setIsLoudnessAdjusted(true);
-                    }}
-                    className="w-full accent-white"
-                  />
                   <button
-                    onClick={() => {
-                      logEvent ("Clicked reset loudness ")
-                      setLoudness(65);
-                      setIsLoudnessAdjusted(false);
-                      setActiveControl(null);
-                    }}
-                    className="text-[var(--font-white)] hover:text-[#cccccc] transition"
-                    title="Reset"
+                    onClick={() =>
+                      setActiveTooltip(activeTooltip === 'loudness' ? null : 'loudness')
+                    }
+                    className="text-[var(--font-gray)] hover:text-white transition"
                   >
-                    <RotateCcw size={15} />
+                    {activeTooltip === 'loudness' ? (
+                      <X size={20} />
+                    ) : (
+                      <HelpCircle size={20} />
+                    )}
                   </button>
                 </div>
+            
+                {activeTooltip === 'loudness' ? (
+                  <div>
+                    <p className="text-sm text-[var(--font-gray)]">
+                      {tooltips.loudness.text}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max={loudnessOptions.length - 1}
+                        value={loudness}
+                        onChange={(e) => {
+                          setLoudness(parseInt(e.target.value));
+                          setIsLoudnessAdjusted(true);
+                        }}
+                        className="w-full accent-white"
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-400">
+                      {loudnessOptions.map((option, index) => (
+                        <span
+                          key={index}
+                          className={`capitalize ${
+                            index === loudness ? 'text-white font-medium' : ''
+                          }`}
+                        >
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/*Duration Panel*/}
             {activeControl === 'duration' && (
-              <div className="absolute bottom-11.5 left-82.5 translate-y-[-100%] w-64 p-4 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
-                <div className="flex justify-between text-base mb-2">
+              <div className="absolute left-82.5 translate-y-[-70%] w-80 p-5 bg-[var(--sound-button)] text-[var(--font-white)] rounded-2xl shadow-xl z-10">
+                <div className="flex justify-between items-center text-base mb-2">
                   <span className="text-[var(--font-gray)]">Duration</span>
-                  <span className="text-[var(--font-white)]">{duration}s</span>
+                  <div className="flex items-center gap-2">
+                    {activeTooltip === "duration" ? null : (
+                      <span className="text-[var(--font-white)]">{durationOptions[duration]}s</span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setActiveTooltip(activeTooltip === "duration" ? null : "duration");
+                        logEvent("Clicked Duration tooltip");
+                      }}
+                      className="text-[var(--font-gray)] hover:text-white transition"
+                    >
+                      {activeTooltip === "duration" ? (
+                        <X size={20} />
+                      ) : (
+                        <HelpCircle size={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-
+            
+                {activeTooltip === "duration" ? (
+                  <div>
+                    <p className="text-sm text-[var(--font-gray)]">
+                      {tooltips.duration.text}
+                    </p>
+                  </div>
+                ) : (
                   <input
                     type="range"
-                    min="1"
-                    max="10"
+                    min="0"
+                    max={durationOptions.length - 1}
                     value={duration}
                     onChange={(e) => {
-                      setDuration(e.target.value);
+                      setDuration(parseInt(e.target.value));
                       setIsDurationAdjusted(true);
                     }}
                     className="w-full accent-white"
                   />
-                  <button
-                    onClick={() => {
-                      logEvent ("Clicked reset duration")
-                      setDuration(5.12);
-                      setIsDurationAdjusted(false);
-                      setActiveControl(null);
-                    }}
-                    className="text-[var(--font-white)] hover:text-[#cccccc] transition"
-                    title="Reset"
-                  >
-                    <RotateCcw size={15} />
-                  </button>
-                </div>
+                )}
               </div>
             )}
 
@@ -581,7 +641,7 @@ function MainApplication() {
                   Hearsona is a tool that helps you create sounds using just words. Type what you want to hear, and the system will turn it into audio for you.
                   You can also adjust Pitch, Loudness, and Duration to make the sound match your needs.
                   <br /><br />
-                  It’s designed to be easy to use, with live previews and simple controls, so you can explore and adjust your sound until it feels just right.
+                  It's designed to be easy to use, with live previews and simple controls, so you can explore and adjust your sound until it feels just right.
                 </p>
               </div>
             )}
@@ -625,7 +685,6 @@ function MainApplication() {
                 </button>
               </div>
             )}
-
 
           </div>
         </div>
