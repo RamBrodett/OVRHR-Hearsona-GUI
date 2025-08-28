@@ -10,20 +10,7 @@ function MainApplication() {
 
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
-  const [versions, setVersions] = useState([
-    {
-      versionNumber: 1,
-      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
-    },
-    {
-      versionNumber: 2,
-      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
-    },
-    {
-      versionNumber: 3,
-      audioUrl: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DvwXMiBC2Izvba'
-    }
-  ]);
+  const [versions, setVersions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   /* Sound Parameters - Updated to categorical */
@@ -54,8 +41,6 @@ function MainApplication() {
       text: "It controls how long the sound plays. Shorter durations give quick sounds, while longer durations sustain the sound."
     }
   };
-  
-  
 
   {/* Autoscroll to the latest chat/version */}
   const chatRef = useRef(null);
@@ -77,8 +62,8 @@ function MainApplication() {
 
   useEffect(() => {
     if (versionRef.current) {
-      versionRef.current.scrollTop = 0;
-    }
+      versionRef.current.scrollTop = versionRef.current.scrollHeight;
+   }
   }, [versions]);
 
   /* Export Chat */
@@ -88,7 +73,7 @@ function MainApplication() {
     if (!fileName) return;
 
     try {
-      const response = await fetch('api/exportChat', {
+      const response = await fetch('api/sessions/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_input: fileName }),
@@ -96,7 +81,7 @@ function MainApplication() {
 
       const data = await response.json();
 
-      if (data.status === "good") {
+      if (data.status === "success") {
         alert("Export successful!");
       } else {
         alert("Export failed: " + (data.message || "Unknown error"));
@@ -109,12 +94,12 @@ function MainApplication() {
   
   const newUser = async () => {
     try {
-      const response = await fetch('api/newUser', {
+      const response = await fetch('api/sessions/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
-      if (data.status === "new user session started") {
+      if (data.status === "success") {
          // Convert logs to text
         const logText = logs.join('\n')
         const blob = new Blob([logText], { type: 'text/plain' })
@@ -142,12 +127,12 @@ function MainApplication() {
 
   const handleStartOver = async() => {
     try {
-      const response = await fetch('api/startOver', {
+      const response = await fetch('api/sessions/restart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
-      if (data.status === "new session started") {
+      if (data.status === "success") {
         alert("New session started");
       } else {
         alert("failed new session restart" + (data.message || "Unknown error"));
@@ -171,7 +156,7 @@ function MainApplication() {
     if (isDurationAdjusted) settings.duration = duration;
 
     try{
-      const response = await fetch('api/query',{
+      const response = await fetch('api/chat/query',{
         method: 'POST',
         headers:{'Content-Type': 'application/json',},
         body: JSON.stringify({
