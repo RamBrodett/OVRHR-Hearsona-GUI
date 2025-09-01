@@ -8,6 +8,14 @@ const VersionsComponent = ({ versions, expandedVersion, setExpandedVersion, logE
         <div
           key={version.versionNumber}
           className="rounded-2xl overflow-hidden border border-[var(--background-3)]"
+          onClick={() => {
+                  logEvent(`Expanded version ${version.versionNumber}`)
+                  setExpandedVersion(
+                    expandedVersion === version.versionNumber
+                      ? null
+                      : version.versionNumber
+                  )
+                }}
         >
           {/* Header */}
           <div

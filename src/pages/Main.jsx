@@ -66,6 +66,17 @@ function MainApplication() {
    }
   }, [versions]);
 
+  useEffect(() => {
+    /* Cleanup function to revoke object URLs when component unmounts */
+    return () => {
+      versions.forEach(version => {
+        if (version.audioUrl && version.audioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(version.audioUrl);
+        }
+      });
+    };
+  }, []);
+
   /* Export Chat */
   const exportChat = async () => {
     const fileName = prompt("Enter ID:", "Id Here");
@@ -180,6 +191,7 @@ function MainApplication() {
             versionNumber: prev.length + 1,
             audioUrl: audioUrl
           }])
+          setExpandedVersion(versions.length)
         }
       }
     } catch (error){
