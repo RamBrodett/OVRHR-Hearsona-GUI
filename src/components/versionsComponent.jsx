@@ -8,14 +8,6 @@ const VersionsComponent = ({ versions, expandedVersion, setExpandedVersion, logE
         <div
           key={version.versionNumber}
           className="rounded-2xl overflow-hidden border border-[var(--background-3)]"
-          onClick={() => {
-                  logEvent(`Expanded version ${version.versionNumber}`)
-                  setExpandedVersion(
-                    expandedVersion === version.versionNumber
-                      ? null
-                      : version.versionNumber
-                  )
-                }}
         >
           {/* Header */}
           <div
@@ -24,15 +16,28 @@ const VersionsComponent = ({ versions, expandedVersion, setExpandedVersion, logE
                 ? 'bg-[var(--background-3)]'
                 : 'bg-[var(--sound-button)]'
             }`}
+            onClick={() => {
+                  logEvent(`Expanded version ${version.versionNumber}`)
+                  setExpandedVersion(
+                    expandedVersion === version.versionNumber
+                      ? null
+                      : version.versionNumber
+                  )
+                }}
           >
-            <p className="text-[var(--font-white)] text-lg font-medium">
+            <p className="text-[var(--font-white)] text-lg font-medium ">
               Version {version.versionNumber}
             </p>
 
             <div className="flex items-center gap-3">
               {/* Export Button */}
               <button className="flex items-center gap-2 bg-[var(--export-button)] 
-                text-[var(--font-white)] px-3 py-2 rounded-2xl hover:brightness-110 transition">
+                text-[var(--font-white)] px-3 py-2 rounded-2xl hover:brightness-110 transition"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    logEvent(`Exported version ${version.versionNumber}`);
+                    // export functionality here
+                  }}>
                 <Upload size={18} />
                 <span className="text-sm font-medium">Export</span>
               </button>
