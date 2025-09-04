@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEffect, useRef } from 'react';
 import { RotateCcw, HelpCircle, ArrowUp, Clock, Volume2, Activity,  Menu, Plus, MessageSquareShare, X} from 'lucide-react';
+import { mockAPI } from '../mock_services/mockAPI';
 
 import VersionsComponent from '../components/versionsComponent';
 
@@ -12,6 +13,8 @@ function MainApplication() {
   const [userInput, setUserInput] = useState('');
   const [versions, setVersions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const USE_MOCK_API = true;
 
   /* Sound Parameters - Updated to categorical */
   const pitchOptions = ['lower', 'low', 'normal', 'high', 'higher'];
@@ -65,6 +68,17 @@ function MainApplication() {
       versionRef.current.scrollTop = versionRef.current.scrollHeight;
    }
   }, [versions]);
+
+  useEffect(() => {
+    /* Cleanup function to revoke object URLs when component unmounts */
+    return () => {
+      versions.forEach(version => {
+        if (version.audioUrl && version.audioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(version.audioUrl);
+        }
+      });
+    };
+  }, []);
 
   /* Export Chat */
   const exportChat = async () => {
@@ -156,16 +170,14 @@ function MainApplication() {
     if (isDurationAdjusted) settings.duration = duration;
 
     try{
-      const response = await fetch('api/chat/query',{
+      const data = USE_MOCK_API ? await mockAPI.chatQuery(userInput.trim(), settings) : await fetch('api/chat/query',{
         method: 'POST',
         headers:{'Content-Type': 'application/json',},
         body: JSON.stringify({
           user_input : userInput.trim(),
           settings : settings
         })
-      });
-
-      const data = await response.json();
+      }).then(res => res.json());
 
       if(data.status === "success"){
         const responseText = data.message;
@@ -180,6 +192,7 @@ function MainApplication() {
             versionNumber: prev.length + 1,
             audioUrl: audioUrl
           }])
+          setExpandedVersion(versions.length +1)
         }
       }
     } catch (error){
@@ -209,8 +222,6 @@ function MainApplication() {
     const timestamp = new Date().toISOString()
     setLogs((prev) => [...prev, `[${timestamp}] ${event}`])
   }
-
-
 
   return (
     <div className="flex flex-col bg-[var(--background)] p-11 h-screen min-w-screen">
